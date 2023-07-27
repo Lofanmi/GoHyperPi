@@ -80,13 +80,13 @@ func PrintCPU() {
 }
 
 func PrintPi(i, N int, pi []int) {
-	print("3.")
+	fmt.Print("3.")
 	for i++; i < N-2; i++ {
 		s := strconv.Itoa(pi[i])
 		s = strings.Repeat("0", 4-len(s)) + s
-		print(s)
+		fmt.Print(s)
 	}
-	println()
+	fmt.Println()
 }
 
 func ComputePi(n int) (i, N int, pi []int) {
