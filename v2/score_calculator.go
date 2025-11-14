@@ -28,9 +28,20 @@ func NewScoreCalculator() *ScoreCalculator {
 
 // normalizeScore 标准化分数，使用对数缩放减少极端值影响
 func (sc *ScoreCalculator) normalizeScore(score float64) float64 {
+	// 检查是否为无穷大或NaN
+	if math.IsInf(score, 0) || math.IsNaN(score) {
+		return 10000.0 // 为无穷大值设置一个合理的上限
+	}
 	if score <= 0 {
 		return 0.1 // 避免log(0)
 	}
+
+	// 限制最大值，避免极端情况
+	maxScore := 10000000.0 // 1000万分上限
+	if score > maxScore {
+		score = maxScore
+	}
+
 	// 使用对数缩放，让分数更稳定
 	// log10(score/1000 + 1) * 1000 可以将大数值压缩到合理范围
 	return math.Log10(score/1000.0+1.0) * 1000.0
@@ -107,8 +118,17 @@ func (sc *ScoreCalculator) GenerateReport(results []BenchmarkResult) string {
 	report.WriteString("详细测试结果:\n")
 	for _, result := range results {
 		normalizedScore := sc.normalizeScore(result.Score)
+
+		// 避免除零错误
+		var ratio float64
+		if result.SingleRate > 0 {
+			ratio = result.MultiRate / result.SingleRate
+		} else {
+			ratio = 0.0
+		}
+
 		report.WriteString(fmt.Sprintf("  %-6s | %-32s | 得分: %8.2f | 单核: %8.2f | 多核: %8.2f | 多核/单核: %.2f\n",
-			result.Category, result.Name, normalizedScore, result.SingleRate, result.MultiRate, result.MultiRate/result.SingleRate))
+			result.Category, result.Name, normalizedScore, result.SingleRate, result.MultiRate, ratio))
 	}
 	report.WriteString("\n")
 
@@ -117,6 +137,11 @@ func (sc *ScoreCalculator) GenerateReport(results []BenchmarkResult) string {
 
 // CompareWithBaseline 与基准对比
 func (sc *ScoreCalculator) CompareWithBaseline(currentScore, baselineScore float64) string {
+	// 避免除零错误
+	if baselineScore <= 0 {
+		return "基准分数无效，无法对比"
+	}
+
 	improvement := (currentScore - baselineScore) / baselineScore * 100
 	if improvement > 0 {
 		return fmt.Sprintf("性能提升: %.2f%%", improvement)

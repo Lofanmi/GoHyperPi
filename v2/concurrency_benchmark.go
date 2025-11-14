@@ -49,7 +49,14 @@ func (cb *ConcurrencyBenchmark) Run(proc, times int) BenchmarkResult {
 	single = single / float64(p)
 	t1 := 1000000.0 / single                     // 单核操作速率（ops/s）
 	tn := float64(p*1000000) / duration.Seconds() // 多核操作速率（ops/s）
-	efficiency := tn / t1 / float64(proc)         // 多核效率
+
+	// 避免除零错误
+	var efficiency float64
+	if t1 > 0 {
+		efficiency = tn / t1 / float64(proc)      // 多核效率
+	} else {
+		efficiency = 0.0
+	}
 	return BenchmarkResult{
 		Name:       cb.Name(),
 		Category:   cb.Category(),
@@ -153,7 +160,14 @@ func (ccb *ChannelBenchmark) Run(proc, times int) BenchmarkResult {
 	single = single / float64(p)
 	t1 := 100000.0 / single                     // 单核消息速率（msg/s）
 	tn := float64(p*100000) / duration.Seconds() // 多核消息速率（msg/s）
-	efficiency := tn / t1 / float64(proc)        // 多核效率
+
+	// 避免除零错误
+	var efficiency float64
+	if t1 > 0 {
+		efficiency = tn / t1 / float64(proc)      // 多核效率
+	} else {
+		efficiency = 0.0
+	}
 	return BenchmarkResult{
 		Name:       ccb.Name(),
 		Category:   ccb.Category(),

@@ -52,8 +52,15 @@ func main() {
 	if verbose {
 		fmt.Println("详细测试结果:")
 		for _, result := range results {
+			// 避免除零错误
+			var ratio float64
+			if result.SingleRate > 0 {
+				ratio = result.MultiRate / result.SingleRate
+			} else {
+				ratio = 0.0
+			}
 			fmt.Printf("  %-6s | %-32s | 得分: %8.2f | 单核: %8.2f | 多核: %8.2f | 多核/单核: %.2f | 耗时: %v\n",
-				result.Category, result.Name, result.Score, result.SingleRate, result.MultiRate, result.MultiRate/result.SingleRate, result.Duration)
+				result.Category, result.Name, result.Score, result.SingleRate, result.MultiRate, ratio, result.Duration)
 		}
 		fmt.Println()
 	}

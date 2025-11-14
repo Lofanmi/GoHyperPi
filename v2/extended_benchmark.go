@@ -58,7 +58,14 @@ func (tb *TrigBenchmark) Run(proc, times int) BenchmarkResult {
 
 	t1 := 2000000.0 / single                      // 单核操作速率
 	tn := float64(p*2000000) / duration.Seconds() // 多核操作速率
-	efficiency := tn / t1 / float64(proc)         // 多核效率
+
+	// 避免除零错误
+	var efficiency float64
+	if t1 > 0 {
+		efficiency = tn / t1 / float64(proc)      // 多核效率
+	} else {
+		efficiency = 0.0
+	}
 
 	return BenchmarkResult{
 		Name:       tb.Name(),
@@ -132,7 +139,14 @@ func (bob *BitOperationsBenchmark) Run(proc, times int) BenchmarkResult {
 
 	t1 := float64(operations) / single               // 单核操作速率
 	tn := float64(p*operations) / duration.Seconds() // 多核操作速率
-	efficiency := tn / t1 / float64(proc)            // 多核效率
+
+	// 避免除零错误
+	var efficiency float64
+	if t1 > 0 {
+		efficiency = tn / t1 / float64(proc)         // 多核效率
+	} else {
+		efficiency = 0.0
+	}
 
 	return BenchmarkResult{
 		Name:       bob.Name(),
@@ -206,7 +220,14 @@ func (acb *AdvancedCryptoBenchmark) Run(proc, times int) BenchmarkResult {
 
 	t1 := 500.0 / single                      // 单核操作速率
 	tn := float64(p*500) / duration.Seconds() // 多核操作速率
-	efficiency := tn / t1 / float64(proc)     // 多核效率
+
+	// 避免除零错误
+	var efficiency float64
+	if t1 > 0 {
+		efficiency = tn / t1 / float64(proc)   // 多核效率
+	} else {
+		efficiency = 0.0
+	}
 
 	return BenchmarkResult{
 		Name:       acb.Name(),
@@ -293,7 +314,14 @@ func (ib *IntegerBenchmark) Run(proc, times int) BenchmarkResult {
 
 	t1 := float64(operations) / single               // 单核操作速率
 	tn := float64(p*operations) / duration.Seconds() // 多核操作速率
-	efficiency := tn / t1 / float64(proc)            // 多核效率
+
+	// 避免除零错误
+	var efficiency float64
+	if t1 > 0 {
+		efficiency = tn / t1 / float64(proc)         // 多核效率
+	} else {
+		efficiency = 0.0
+	}
 
 	return BenchmarkResult{
 		Name:       ib.Name(),
@@ -370,7 +398,14 @@ func (bb *BinaryBenchmark) Run(proc, times int) BenchmarkResult {
 
 	t1 := float64(operations) / single               // 单核操作速率
 	tn := float64(p*operations) / duration.Seconds() // 多核操作速率
-	efficiency := tn / t1 / float64(proc)            // 多核效率
+
+	// 避免除零错误
+	var efficiency float64
+	if t1 > 0 {
+		efficiency = tn / t1 / float64(proc)         // 多核效率
+	} else {
+		efficiency = 0.0
+	}
 
 	return BenchmarkResult{
 		Name:       bb.Name(),

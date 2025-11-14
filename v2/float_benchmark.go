@@ -53,7 +53,13 @@ func (fb *FloatBenchmark) Run(proc, times int) BenchmarkResult {
 
 	t1 := 5000000.0 / single                    // 单核浮点运算速率（flops/s）
 	tn := float64(p*5000000) / duration.Seconds() // 多核浮点运算速率（flops/s）
-	efficiency := tn / t1 / float64(proc)        // 多核效率
+	// 避免除零错误
+	var efficiency float64
+	if t1 > 0 {
+		efficiency = tn / t1 / float64(proc)        // 多核效率
+	} else {
+		efficiency = 0.0
+	}
 
 	return BenchmarkResult{
 		Name:       fb.Name(),
@@ -167,7 +173,13 @@ func (mb *MatrixBenchmark) Run(proc, times int) BenchmarkResult {
 
 	t1 := 1.0 / single                             // 单核矩阵运算速率
 	tn := float64(p) / duration.Seconds()          // 多核矩阵运算速率
-	efficiency := tn / t1 / float64(proc)          // 多核效率
+	// 避免除零错误
+	var efficiency float64
+	if t1 > 0 {
+		efficiency = tn / t1 / float64(proc)          // 多核效率
+	} else {
+		efficiency = 0.0
+	}
 
 	return BenchmarkResult{
 		Name:       mb.Name(),

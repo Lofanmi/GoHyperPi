@@ -57,7 +57,13 @@ func (mb *MemoryBenchmark) Run(proc, times int) BenchmarkResult {
 	// 计算内存访问速率（GB/s）
 	t1 := float64(mb.size) / (1024*1024*1024) / single                           // 单核速率
 	tn := float64(int64(p)*mb.size) / (1024*1024*1024) / duration.Seconds() // 多核速率
-	efficiency := tn / t1 / float64(proc)                         // 多核效率
+	// 避免除零错误
+	var efficiency float64
+	if t1 > 0 {
+		efficiency = tn / t1 / float64(proc)                         // 多核效率
+	} else {
+		efficiency = 0.0
+	}
 
 	return BenchmarkResult{
 		Name:       mb.Name(),
@@ -136,7 +142,13 @@ func (msb *MemorySequentialBenchmark) Run(proc, times int) BenchmarkResult {
 
 	t1 := float64(size) / (1024*1024*1024) / single
 	tn := float64(int64(p)*size) / (1024*1024*1024) / duration.Seconds()
-	efficiency := tn / t1 / float64(proc)
+	// 避免除零错误
+	var efficiency float64
+	if t1 > 0 {
+		efficiency = tn / t1 / float64(proc)
+	} else {
+		efficiency = 0.0
+	}
 
 	return BenchmarkResult{
 		Name:       msb.Name(),

@@ -52,7 +52,13 @@ func (sb *SortingBenchmark) Run(proc, times int) BenchmarkResult {
 	single = single / float64(p)
 	t1 := 10000.0 / single                      // 单核排序速率（elements/s）
 	tn := float64(p*10000) / duration.Seconds() // 多核排序速率（elements/s）
-	efficiency := tn / t1 / float64(proc)       // 多核效率
+	// 避免除零错误
+	var efficiency float64
+	if t1 > 0 {
+		efficiency = tn / t1 / float64(proc)       // 多核效率
+	} else {
+		efficiency = 0.0
+	}
 	return BenchmarkResult{
 		Name:       sb.Name(),
 		Category:   sb.Category(),
@@ -131,7 +137,13 @@ func (sb *StringBenchmark) Run(proc, times int) BenchmarkResult {
 	single = single / float64(p)
 	t1 := 1000.0 / single                      // 单核操作速率
 	tn := float64(p*1000) / duration.Seconds() // 多核操作速率
-	efficiency := tn / t1 / float64(proc)      // 多核效率
+	// 避免除零错误
+	var efficiency float64
+	if t1 > 0 {
+		efficiency = tn / t1 / float64(proc)      // 多核效率
+	} else {
+		efficiency = 0.0
+	}
 	return BenchmarkResult{
 		Name:       sb.Name(),
 		Category:   sb.Category(),

@@ -56,7 +56,14 @@ func (cb *CryptoBenchmark) Run(proc, times int) BenchmarkResult {
 	single = single / float64(p)
 	t1 := 50000.0 / single                    // 单核操作速率（ops/s）
 	tn := float64(p*50000) / duration.Seconds() // 多核操作速率（ops/s）
-	efficiency := tn / t1 / float64(proc)      // 多核效率
+
+	// 避免除零错误
+	var efficiency float64
+	if t1 > 0 {
+		efficiency = tn / t1 / float64(proc)   // 多核效率
+	} else {
+		efficiency = 0.0
+	}
 	return BenchmarkResult{
 		Name:       cb.Name(),
 		Category:   cb.Category(),
@@ -142,7 +149,14 @@ func (hb *HashBenchmark) Run(proc, times int) BenchmarkResult {
 	single = single / float64(p)
 	t1 := 200000.0 / single                    // 单核哈希速率（hash/s）
 	tn := float64(p*200000) / duration.Seconds() // 多核哈希速率（hash/s）
-	efficiency := tn / t1 / float64(proc)       // 多核效率
+
+	// 避免除零错误
+	var efficiency float64
+	if t1 > 0 {
+		efficiency = tn / t1 / float64(proc)   // 多核效率
+	} else {
+		efficiency = 0.0
+	}
 	return BenchmarkResult{
 		Name:       hb.Name(),
 		Category:   hb.Category(),

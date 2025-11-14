@@ -93,8 +93,13 @@ func (bs *BenchmarkSuite) runAdaptiveBenchmark(benchmark Benchmark, proc, times 
 	sampleResult := benchmark.Run(proc, 1)
 	estimatedTimePerRound := sampleResult.Duration
 
-	// 计算需要的轮次
-	estimatedRounds := int(targetDuration / estimatedTimePerRound)
+	// 计算需要的轮次，避免除零错误
+	var estimatedRounds int
+	if estimatedTimePerRound > 0 {
+		estimatedRounds = int(targetDuration / estimatedTimePerRound)
+	} else {
+		estimatedRounds = minRounds
+	}
 	if estimatedRounds < minRounds {
 		estimatedRounds = minRounds
 	}
