@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"strings"
 )
 
@@ -26,34 +25,12 @@ func NewScoreCalculator() *ScoreCalculator {
 	}
 }
 
-// normalizeScore 标准化分数，使用对数缩放减少极端值影响
-func (sc *ScoreCalculator) normalizeScore(score float64) float64 {
-	// 检查是否为无穷大或NaN
-	if math.IsInf(score, 0) || math.IsNaN(score) {
-		return 10000.0 // 为无穷大值设置一个合理的上限
-	}
-	if score <= 0 {
-		return 0.1 // 避免log(0)
-	}
-
-	// 限制最大值，避免极端情况
-	maxScore := 10000000.0 // 1000万分上限
-	if score > maxScore {
-		score = maxScore
-	}
-
-	// 使用对数缩放，让分数更稳定
-	// log10(score/1000 + 1) * 1000 可以将大数值压缩到合理范围
-	return math.Log10(score/1000.0+1.0) * 1000.0
-}
-
 // CalculateTotal 计算综合得分
 func (sc *ScoreCalculator) CalculateTotal(results []BenchmarkResult) float64 {
 	categoryScores := make(map[string][]float64)
 	// 按类别分组得分
 	for _, result := range results {
-		normalizedScore := sc.normalizeScore(result.Score)
-		categoryScores[result.Category] = append(categoryScores[result.Category], normalizedScore)
+		categoryScores[result.Category] = append(categoryScores[result.Category], result.Score)
 	}
 	// 计算加权总分
 	totalScore := 0.0
@@ -81,8 +58,7 @@ func (sc *ScoreCalculator) GetCategoryScore(results []BenchmarkResult, category 
 	var scores []float64
 	for _, result := range results {
 		if result.Category == category {
-			normalizedScore := sc.normalizeScore(result.Score)
-			scores = append(scores, normalizedScore)
+			scores = append(scores, result.Score)
 		}
 	}
 	if len(scores) == 0 {
@@ -103,7 +79,7 @@ func (sc *ScoreCalculator) GenerateReport(results []BenchmarkResult) string {
 
 	// 综合得分
 	totalScore := sc.CalculateTotal(results)
-	report.WriteString(fmt.Sprintf("综合得分: %.2f\n", totalScore))
+	report.WriteString(fmt.Sprintf("综合得分: %.0f\n", totalScore))
 	report.WriteString("\n")
 	// 分类得分
 	report.WriteString("分类得分:\n")
@@ -111,41 +87,19 @@ func (sc *ScoreCalculator) GenerateReport(results []BenchmarkResult) string {
 	for _, category := range categories {
 		score := sc.GetCategoryScore(results, category)
 		weight := sc.categoryWeights[category] * 100
-		report.WriteString(fmt.Sprintf("  %-12s: %8.2f (权重: %.0f%%)\n", category, score, weight))
+		report.WriteString(fmt.Sprintf("  %-6s: %8.0f (权重: %.0f%%)\n", category, score, weight))
 	}
 	report.WriteString("\n")
 	// 详细结果
 	report.WriteString("详细测试结果:\n")
 	for _, result := range results {
-		normalizedScore := sc.normalizeScore(result.Score)
-
-		// 避免除零错误
-		var ratio float64
-		if result.SingleRate > 0 {
-			ratio = result.MultiRate / result.SingleRate
-		} else {
-			ratio = 0.0
-		}
-
-		report.WriteString(fmt.Sprintf("  %-6s | %-32s | 得分: %8.2f | 单核: %8.2f | 多核: %8.2f | 多核/单核: %.2f\n",
-			result.Category, result.Name, normalizedScore, result.SingleRate, result.MultiRate, ratio))
+		report.WriteString(fmt.Sprintf("  %-6s | %-32s | 得分: %8.0f | 单核耗时: %s | 多核耗时: %s | 多核/单核: %.2f\n",
+			result.Category, result.Name,
+			result.Score,
+			formatDuration(result.SingleDuration.Seconds()), formatDuration(result.MultiDuration.Seconds()),
+			result.Ratio))
 	}
 	report.WriteString("\n")
 
 	return report.String()
-}
-
-// CompareWithBaseline 与基准对比
-func (sc *ScoreCalculator) CompareWithBaseline(currentScore, baselineScore float64) string {
-	// 避免除零错误
-	if baselineScore <= 0 {
-		return "基准分数无效，无法对比"
-	}
-
-	improvement := (currentScore - baselineScore) / baselineScore * 100
-	if improvement > 0 {
-		return fmt.Sprintf("性能提升: %.2f%%", improvement)
-	} else {
-		return fmt.Sprintf("性能下降: %.2f%%", -improvement)
-	}
 }

@@ -9,74 +9,22 @@ import (
 	"encoding/binary"
 	"math"
 	"math/bits"
-	"sync"
-	"time"
 )
 
 // TrigBenchmark 三角函数测试
-type TrigBenchmark struct{}
+type TrigBenchmark struct {
+	*BaseBenchmark
+}
 
 func NewTrigBenchmark() *TrigBenchmark {
-	return &TrigBenchmark{}
-}
-
-func (tb *TrigBenchmark) Name() string {
-	return "三角函数计算（Trigonometric Functions）"
-}
-
-func (tb *TrigBenchmark) Description() string {
-	return "测试三角函数性能"
-}
-
-func (tb *TrigBenchmark) Category() string {
-	return "浮点性能"
-}
-
-func (tb *TrigBenchmark) Run(proc, times int) BenchmarkResult {
-	p := proc * times
-	ch := make(chan float64, p)
-	wg := new(sync.WaitGroup)
-	wg.Add(p)
-
-	start := time.Now()
-	for i := 0; i < p; i++ {
-		go func() {
-			defer wg.Done()
-			t := time.Now()
-			trigTest(2000000) // 200万次三角函数运算
-			ch <- time.Since(t).Seconds()
-		}()
-	}
-	wg.Wait()
-	duration := time.Since(start)
-	close(ch)
-	single := 0.0
-	for s := range ch {
-		single += s
-	}
-	single = single / float64(p)
-
-	t1 := 2000000.0 / single                      // 单核操作速率
-	tn := float64(p*2000000) / duration.Seconds() // 多核操作速率
-
-	// 避免除零错误
-	var efficiency float64
-	if t1 > 0 {
-		efficiency = tn / t1 / float64(proc)      // 多核效率
-	} else {
-		efficiency = 0.0
-	}
-
-	return BenchmarkResult{
-		Name:       tb.Name(),
-		Category:   tb.Category(),
-		Score:      tn / 1000.0,
-		Duration:   duration,
-		SingleRate: t1,
-		MultiRate:  tn,
-		Efficiency: efficiency,
-		Proc:       proc,
-		Times:      times,
+	return &TrigBenchmark{
+		BaseBenchmark: NewBaseBenchmark(
+			"三角函数计算（Trigonometric Functions）",
+			"测试三角函数性能",
+			"浮点性能",
+			trigTest,
+			5000000, // 500万次三角函数运算
+		),
 	}
 }
 
@@ -93,71 +41,19 @@ func trigTest(operations int) {
 }
 
 // BitOperationsBenchmark 位运算测试
-type BitOperationsBenchmark struct{}
+type BitOperationsBenchmark struct {
+	*BaseBenchmark
+}
 
 func NewBitOperationsBenchmark() *BitOperationsBenchmark {
-	return &BitOperationsBenchmark{}
-}
-
-func (bob *BitOperationsBenchmark) Name() string {
-	return "位运算测试（Bit Operations）"
-}
-
-func (bob *BitOperationsBenchmark) Description() string {
-	return "测试位运算性能"
-}
-
-func (bob *BitOperationsBenchmark) Category() string {
-	return "计算密集型"
-}
-
-func (bob *BitOperationsBenchmark) Run(proc, times int) BenchmarkResult {
-	p := proc * times
-	ch := make(chan float64, p)
-	wg := new(sync.WaitGroup)
-	wg.Add(p)
-
-	// 增加运算量，确保测试时间足够长
-	operations := 50000000 // 5000万次操作
-	start := time.Now()
-	for i := 0; i < p; i++ {
-		go func() {
-			defer wg.Done()
-			t := time.Now()
-			bitTest(operations)
-			ch <- time.Since(t).Seconds()
-		}()
-	}
-	wg.Wait()
-	duration := time.Since(start)
-	close(ch)
-	single := 0.0
-	for s := range ch {
-		single += s
-	}
-	single = single / float64(p)
-
-	t1 := float64(operations) / single               // 单核操作速率
-	tn := float64(p*operations) / duration.Seconds() // 多核操作速率
-
-	// 避免除零错误
-	var efficiency float64
-	if t1 > 0 {
-		efficiency = tn / t1 / float64(proc)         // 多核效率
-	} else {
-		efficiency = 0.0
-	}
-
-	return BenchmarkResult{
-		Name:       bob.Name(),
-		Category:   bob.Category(),
-		Score:      tn / 1000.0,
-		Duration:   duration,
-		SingleRate: t1,
-		MultiRate:  tn,
-		Efficiency: efficiency,
-		Proc:       proc,
-		Times:      times,
+	return &BitOperationsBenchmark{
+		BaseBenchmark: NewBaseBenchmark(
+			"位运算测试（Bit Operations）",
+			"测试位运算性能",
+			"计算密集型",
+			bitTest,
+			1000000000, // 10亿次操作
+		),
 	}
 }
 
@@ -176,69 +72,19 @@ func bitTest(operations int) {
 }
 
 // AdvancedCryptoBenchmark 高级加密测试
-type AdvancedCryptoBenchmark struct{}
+type AdvancedCryptoBenchmark struct {
+	*BaseBenchmark
+}
 
 func NewAdvancedCryptoBenchmark() *AdvancedCryptoBenchmark {
-	return &AdvancedCryptoBenchmark{}
-}
-
-func (acb *AdvancedCryptoBenchmark) Name() string {
-	return "高级加密算法（Advanced Cryptography）"
-}
-
-func (acb *AdvancedCryptoBenchmark) Description() string {
-	return "测试高级加密算法性能"
-}
-
-func (acb *AdvancedCryptoBenchmark) Category() string {
-	return "加密性能"
-}
-
-func (acb *AdvancedCryptoBenchmark) Run(proc, times int) BenchmarkResult {
-	p := proc * times
-	ch := make(chan float64, p)
-	wg := new(sync.WaitGroup)
-	wg.Add(p)
-
-	start := time.Now()
-	for i := 0; i < p; i++ {
-		go func() {
-			defer wg.Done()
-			t := time.Now()
-			advancedCryptoTest(500)
-			ch <- time.Since(t).Seconds()
-		}()
-	}
-	wg.Wait()
-	duration := time.Since(start)
-	close(ch)
-	single := 0.0
-	for s := range ch {
-		single += s
-	}
-	single = single / float64(p)
-
-	t1 := 500.0 / single                      // 单核操作速率
-	tn := float64(p*500) / duration.Seconds() // 多核操作速率
-
-	// 避免除零错误
-	var efficiency float64
-	if t1 > 0 {
-		efficiency = tn / t1 / float64(proc)   // 多核效率
-	} else {
-		efficiency = 0.0
-	}
-
-	return BenchmarkResult{
-		Name:       acb.Name(),
-		Category:   acb.Category(),
-		Score:      tn / 10.0,
-		Duration:   duration,
-		SingleRate: t1,
-		MultiRate:  tn,
-		Efficiency: efficiency,
-		Proc:       proc,
-		Times:      times,
+	return &AdvancedCryptoBenchmark{
+		BaseBenchmark: NewBaseBenchmark(
+			"高级加密算法（Advanced Cryptography）",
+			"测试高级加密算法性能",
+			"加密性能",
+			advancedCryptoTest,
+			100000, // 10万次操作
+		),
 	}
 }
 
@@ -246,8 +92,8 @@ func advancedCryptoTest(operations int) {
 	data := make([]byte, 1024)
 	key := make([]byte, 32)
 	iv := make([]byte, aes.BlockSize)
-	rand.Read(key)
-	rand.Read(iv)
+	_, _ = rand.Read(key)
+	_, _ = rand.Read(iv)
 	for i := 0; i < operations/2; i++ {
 		hash := sha512.Sum512(data)
 		_ = hash
@@ -268,71 +114,19 @@ func advancedCryptoTest(operations int) {
 }
 
 // IntegerBenchmark 整数运算测试
-type IntegerBenchmark struct{}
+type IntegerBenchmark struct {
+	*BaseBenchmark
+}
 
 func NewIntegerBenchmark() *IntegerBenchmark {
-	return &IntegerBenchmark{}
-}
-
-func (ib *IntegerBenchmark) Name() string {
-	return "整数运算测试（Integer Operations）"
-}
-
-func (ib *IntegerBenchmark) Description() string {
-	return "测试整数运算性能"
-}
-
-func (ib *IntegerBenchmark) Category() string {
-	return "计算密集型"
-}
-
-func (ib *IntegerBenchmark) Run(proc, times int) BenchmarkResult {
-	p := proc * times
-	ch := make(chan float64, p)
-	wg := new(sync.WaitGroup)
-	wg.Add(p)
-
-	// 增加运算量，确保测试时间足够长
-	operations := 100000000 // 1亿次操作
-	start := time.Now()
-	for i := 0; i < p; i++ {
-		go func() {
-			defer wg.Done()
-			t := time.Now()
-			integerTest(operations)
-			ch <- time.Since(t).Seconds()
-		}()
-	}
-	wg.Wait()
-	duration := time.Since(start)
-	close(ch)
-	single := 0.0
-	for s := range ch {
-		single += s
-	}
-	single = single / float64(p)
-
-	t1 := float64(operations) / single               // 单核操作速率
-	tn := float64(p*operations) / duration.Seconds() // 多核操作速率
-
-	// 避免除零错误
-	var efficiency float64
-	if t1 > 0 {
-		efficiency = tn / t1 / float64(proc)         // 多核效率
-	} else {
-		efficiency = 0.0
-	}
-
-	return BenchmarkResult{
-		Name:       ib.Name(),
-		Category:   ib.Category(),
-		Score:      tn / 1000.0,
-		Duration:   duration,
-		SingleRate: t1,
-		MultiRate:  tn,
-		Efficiency: efficiency,
-		Proc:       proc,
-		Times:      times,
+	return &IntegerBenchmark{
+		BaseBenchmark: NewBaseBenchmark(
+			"整数运算测试（Integer Operations）",
+			"测试整数运算性能",
+			"计算密集型",
+			integerTest,
+			1000000000, // 10亿次操作
+		),
 	}
 }
 
@@ -352,71 +146,19 @@ func integerTest(operations int) {
 }
 
 // BinaryBenchmark 二进制数据处理测试
-type BinaryBenchmark struct{}
+type BinaryBenchmark struct {
+	*BaseBenchmark
+}
 
 func NewBinaryBenchmark() *BinaryBenchmark {
-	return &BinaryBenchmark{}
-}
-
-func (bb *BinaryBenchmark) Name() string {
-	return "二进制处理（Binary Processing）"
-}
-
-func (bb *BinaryBenchmark) Description() string {
-	return "测试二进制数据处理性能"
-}
-
-func (bb *BinaryBenchmark) Category() string {
-	return "算法性能"
-}
-
-func (bb *BinaryBenchmark) Run(proc, times int) BenchmarkResult {
-	p := proc * times
-	ch := make(chan float64, p)
-	wg := new(sync.WaitGroup)
-	wg.Add(p)
-
-	// 增加运算量，确保测试时间足够长
-	operations := 50000000 // 5000万次操作
-	start := time.Now()
-	for i := 0; i < p; i++ {
-		go func() {
-			defer wg.Done()
-			t := time.Now()
-			binaryTest(operations)
-			ch <- time.Since(t).Seconds()
-		}()
-	}
-	wg.Wait()
-	duration := time.Since(start)
-	close(ch)
-	single := 0.0
-	for s := range ch {
-		single += s
-	}
-	single = single / float64(p)
-
-	t1 := float64(operations) / single               // 单核操作速率
-	tn := float64(p*operations) / duration.Seconds() // 多核操作速率
-
-	// 避免除零错误
-	var efficiency float64
-	if t1 > 0 {
-		efficiency = tn / t1 / float64(proc)         // 多核效率
-	} else {
-		efficiency = 0.0
-	}
-
-	return BenchmarkResult{
-		Name:       bb.Name(),
-		Category:   bb.Category(),
-		Score:      tn / 10.0,
-		Duration:   duration,
-		SingleRate: t1,
-		MultiRate:  tn,
-		Efficiency: efficiency,
-		Proc:       proc,
-		Times:      times,
+	return &BinaryBenchmark{
+		BaseBenchmark: NewBaseBenchmark(
+			"二进制处理（Binary Processing）",
+			"测试二进制数据处理性能",
+			"算法性能",
+			binaryTest,
+			1000000000, // 10亿次操作
+		),
 	}
 }
 

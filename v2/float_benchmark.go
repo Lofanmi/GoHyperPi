@@ -3,74 +3,27 @@ package main
 import (
 	"math"
 	"math/rand"
-	"sync"
-	"time"
 )
 
 // FloatBenchmark 浮点运算性能测试
-type FloatBenchmark struct{}
+type FloatBenchmark struct {
+	*BaseBenchmark
+}
 
 // NewFloatBenchmark 创建浮点运算测试实例
 func NewFloatBenchmark() *FloatBenchmark {
-	return &FloatBenchmark{}
-}
-
-func (fb *FloatBenchmark) Name() string {
-	return "浮点运算测试（Floating Point）"
-}
-
-func (fb *FloatBenchmark) Description() string {
-	return "测试浮点数运算性能"
-}
-
-func (fb *FloatBenchmark) Category() string {
-	return "浮点性能"
-}
-
-func (fb *FloatBenchmark) Run(proc, times int) BenchmarkResult {
-	p := proc * times
-	ch := make(chan float64, p)
-	wg := new(sync.WaitGroup)
-	wg.Add(p)
-
-	start := time.Now()
-	for i := 0; i < p; i++ {
-		go func() {
-			defer wg.Done()
-			t := time.Now()
-			floatTest(5000000) // 500万次浮点运算
-			ch <- time.Since(t).Seconds()
-		}()
-	}
-	wg.Wait()
-	duration := time.Since(start)
-	close(ch)
-	single := 0.0
-	for s := range ch {
-		single += s
-	}
-	single = single / float64(p)
-
-	t1 := 5000000.0 / single                    // 单核浮点运算速率（flops/s）
-	tn := float64(p*5000000) / duration.Seconds() // 多核浮点运算速率（flops/s）
-	// 避免除零错误
-	var efficiency float64
-	if t1 > 0 {
-		efficiency = tn / t1 / float64(proc)        // 多核效率
-	} else {
-		efficiency = 0.0
+	testFunc := func(workload int) {
+		floatTest(workload)
 	}
 
-	return BenchmarkResult{
-		Name:       fb.Name(),
-		Category:   fb.Category(),
-		Score:      tn / 1000.0, // 归一化得分
-		Duration:   duration,
-		SingleRate: t1,
-		MultiRate:  tn,
-		Efficiency: efficiency,
-		Proc:       proc,
-		Times:      times,
+	return &FloatBenchmark{
+		BaseBenchmark: NewBaseBenchmark(
+			"浮点运算测试（Floating Point）",
+			"测试浮点数运算性能",
+			"浮点性能",
+			testFunc,
+			5000000, // 500万次浮点运算
+		),
 	}
 }
 
@@ -129,69 +82,43 @@ func floatTest(operations int) {
 }
 
 // MatrixBenchmark 矩阵运算测试
-type MatrixBenchmark struct{}
+type MatrixBenchmark struct {
+	*BaseBenchmark
+}
 
 func NewMatrixBenchmark() *MatrixBenchmark {
-	return &MatrixBenchmark{}
-}
-
-func (mb *MatrixBenchmark) Name() string {
-	return "矩阵运算测试（Matrix Operations）"
-}
-
-func (mb *MatrixBenchmark) Description() string {
-	return "测试矩阵运算性能"
-}
-
-func (mb *MatrixBenchmark) Category() string {
-	return "浮点性能"
-}
-
-func (mb *MatrixBenchmark) Run(proc, times int) BenchmarkResult {
-	p := proc * times
-	ch := make(chan float64, p)
-	wg := new(sync.WaitGroup)
-	wg.Add(p)
-
-	start := time.Now()
-	for i := 0; i < p; i++ {
-		go func() {
-			defer wg.Done()
-			t := time.Now()
-			matrixTest(200) // 200x200矩阵运算
-			ch <- time.Since(t).Seconds()
-		}()
-	}
-	wg.Wait()
-	duration := time.Since(start)
-	close(ch)
-	single := 0.0
-	for s := range ch {
-		single += s
-	}
-	single = single / float64(p)
-
-	t1 := 1.0 / single                             // 单核矩阵运算速率
-	tn := float64(p) / duration.Seconds()          // 多核矩阵运算速率
-	// 避免除零错误
-	var efficiency float64
-	if t1 > 0 {
-		efficiency = tn / t1 / float64(proc)          // 多核效率
-	} else {
-		efficiency = 0.0
+	testFunc := func(workload int) {
+		// 将workload映射为矩阵大小，使工作量合理
+		size := 200
+		if workload > 200 {
+			// 工作量增加时，增大矩阵大小（立方根关系，因为矩阵乘法是O(n³)）
+			ratio := float64(workload) / 200.0
+			size = int(200.0 * pow(ratio, 1.0/3.0))
+		}
+		matrixTest(size)
 	}
 
-	return BenchmarkResult{
-		Name:       mb.Name(),
-		Category:   mb.Category(),
-		Score:      tn * 1000, // 归一化得分
-		Duration:   duration,
-		SingleRate: t1,
-		MultiRate:  tn,
-		Efficiency: efficiency,
-		Proc:       proc,
-		Times:      times,
+	return &MatrixBenchmark{
+		BaseBenchmark: NewBaseBenchmark(
+			"矩阵运算测试（Matrix Operations）",
+			"测试矩阵运算性能",
+			"浮点性能",
+			testFunc,
+			200, // 基础矩阵大小200x200
+		),
 	}
+}
+
+// 简单的pow函数实现，避免引入math包
+func pow(x, n float64) float64 {
+	if n == 0 {
+		return 1
+	}
+	result := 1.0
+	for i := 0; i < int(n); i++ {
+		result *= x
+	}
+	return result
 }
 
 func matrixTest(size int) {
