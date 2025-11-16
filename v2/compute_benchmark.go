@@ -1,72 +1,25 @@
 package main
 
-import (
-	"sync"
-	"time"
-)
-
 // ComputeBenchmark 计算密集型测试（基于Pi计算）
-type ComputeBenchmark struct{}
+type ComputeBenchmark struct {
+	*BaseBenchmark
+}
 
 // NewComputeBenchmark 创建计算密集型测试实例
 func NewComputeBenchmark() *ComputeBenchmark {
-	return &ComputeBenchmark{}
-}
-
-func (cb *ComputeBenchmark) Name() string {
-	return "圆周率计算（Pi Calculation）"
-}
-
-func (cb *ComputeBenchmark) Description() string {
-	return "计算圆周率来测试CPU整数运算性能"
-}
-
-func (cb *ComputeBenchmark) Category() string {
-	return "计算密集型"
-}
-
-func (cb *ComputeBenchmark) Run(proc, times int) BenchmarkResult {
-	n := 50000 // 默认计算5万位Pi
-	p := proc * times
-	ch := make(chan float64, p)
-	wg := new(sync.WaitGroup)
-	wg.Add(p)
-	start := time.Now()
-	for i := 0; i < p; i++ {
-		go func() {
-			defer wg.Done()
-			t := time.Now()
-			_, _, _ = computePi(n)
-			ch <- time.Since(t).Seconds()
-		}()
+	testFunc := func(workload int) {
+		n := workload // n代表Pi计算的位数
+		_, _, _ = computePi(n)
 	}
-	wg.Wait()
-	duration := time.Since(start)
-	close(ch)
-	single := 0.0
-	for s := range ch {
-		single += s
-	}
-	single = single / float64(p)
-	t1 := float64(n) / single               // 单核性能指标
-	tn := float64(p*n) / duration.Seconds() // 多核性能指标
-	// 避免除零错误
-	var efficiency float64
-	if t1 > 0 {
-		efficiency = tn / t1 / float64(proc)   // 多核效率
-	} else {
-		efficiency = 0.0
-	}
-	return BenchmarkResult{
-		Name:       cb.Name(),
-		Category:   cb.Category(),
-		Score:      tn / 1000.0, // 归一化得分
-		Duration:   duration,
-		SingleRate: t1,
-		MultiRate:  tn,
-		Efficiency: efficiency,
-		Proc:       proc,
-		Times:      times,
+
+	return &ComputeBenchmark{
+		BaseBenchmark: NewBaseBenchmark(
+			"圆周率计算（Pi Calculation）",
+			"计算圆周率来测试CPU整数运算性能",
+			"计算密集型",
+			testFunc,
+			10000, // 计算1万位Pi
+		),
 	}
 }
 
